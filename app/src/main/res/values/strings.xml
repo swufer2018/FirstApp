@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">FirstApp</string>
+    <string name="app_name">Hello</string>
     <string name="action_settings" translatable="false">Settings</string>
-    <string name="btn">Button</string>
+    <string name="btn">Transform</string>
+    <string name="show">Please input</string>
+    <string name="out">outPut:</string>
 </resources>
