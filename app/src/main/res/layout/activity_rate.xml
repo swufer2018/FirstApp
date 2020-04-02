@@ -11,7 +11,9 @@
         android:gravity="center"
         android:hint="@string/rmb_hint"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:inputType="numberDecimal"
+        android:importantForAutofill="no">
 
     </EditText>
     <TextView
@@ -51,6 +53,7 @@
     <Button
         android:id="@+id/btn_open"
         android:text="@string/btn_open"
+        android:layout_marginTop="120dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="openOne">
