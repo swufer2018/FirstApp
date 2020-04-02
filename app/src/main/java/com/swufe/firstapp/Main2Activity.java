@@ -27,10 +27,6 @@ public class Main2Activity extends AppCompatActivity implements View.OnClickList
 
     @Override
     public void onClick(View button) {
-        Transform();
-
-    }
-    public void Transform(){
         log.i("main","transform");
         String str=(String)temp.getText().toString();
         if(str.length()==0){

@@ -13,14 +13,12 @@
         android:layout_width="match_parent"
         android:layout_height="45dp"
         android:gravity="center"
-        android:layout_marginBottom="20dp"
         android:text="@string/app_name" />
 
     <EditText
         android:id="@+id/inpText"
         android:layout_width="match_parent"
         android:layout_height="62dp"
-        android:layout_marginBottom="50dp"
         android:ems="10"
         android:hint="@string/show"
         android:importantForAutofill="no"
@@ -30,7 +28,6 @@
         android:id="@+id/button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="50dp"
         android:onClick="onClick"
         android:text="@string/btn" />
 
