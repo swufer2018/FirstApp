@@ -10,12 +10,18 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +30,9 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -48,11 +57,26 @@ public class RateActivity extends AppCompatActivity implements Runnable{
         wonRate=sharedPreferences.getFloat("won_rate",0.0f);
         Thread t=new Thread(this);
         t.start();
+
         handler=new Handler(){
             @Override
             public void handleMessage(@NonNull Message msg) {
-                if(msg.what==5){
 
+                SharedPreferences time=getSharedPreferences("mytime",Activity.MODE_PRIVATE);
+                int lastTime=time.getInt("systemTime",0);
+                Calendar newCalendar=Calendar.getInstance();
+                int newYear=newCalendar.get(Calendar.YEAR);
+                int newMonth=newCalendar.get(Calendar.MONTH)+1;
+                int newDay=newCalendar.get(Calendar.DAY_OF_MONTH);
+                int newTime=newYear*10000+newMonth*100+newDay;
+                show.setText(newTime+"");
+                if(msg.what==5 && newTime>lastTime){
+                    Bundle bd1=(Bundle)msg.obj;
+                    dollarRate=bd1.getFloat("dollar-rate");
+                    euroRate=bd1.getFloat("euro-rate");
+                    wonRate=bd1.getFloat("won-rate");
+                    Toast.makeText(RateActivity.this,"汇率已更新",Toast.LENGTH_LONG).show();
+                    getTime();
                 }
                 super.handleMessage(msg);
             }
@@ -125,20 +149,64 @@ public class RateActivity extends AppCompatActivity implements Runnable{
 
     @Override
     public void run() {
-        Message msg=handler.obtainMessage(5);
-        URL url= null;
+        Bundle bundle=new Bundle();
+
+//        URL url= null;
+//        try {
+//            url = new URL("https://www.usd-cny.com/bankofchina.htm");
+//            HttpsURLConnection https= (HttpsURLConnection) url.openConnection();
+//            InputStream in=https.getInputStream();
+//            String html=inputStream2String(in);
+//            Document doc=Jsoup.parse(html);
+//        } catch (MalformedURLException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+        Document doc= null;
         try {
-            url = new URL("https://www.usd-cny.com/icbc.htm");
-            HttpsURLConnection https= (HttpsURLConnection) url.openConnection();
-            InputStream in=https.getInputStream();
-            String html=inputStream2String(in);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+            doc = Jsoup.connect("https://www.usd-cny.com/bankofchina.htm").get();
+            Elements tables=doc.getElementsByTag("table");
+            Element table0=tables.get(0);
+            //Log.i(TAG,"run:table0"+table0);
+            Elements tds=table0.getElementsByTag("td");
+            for(int i=0;i<tds.size();i+=6){
+                Element td1=tds.get(i);
+                Element td2=tds.get(i+5);
+                String str1=td1.text();
+                String val=td2.text();
+                if("美元".equals(str1)){
+                    bundle.putFloat("dollar-rate",100f/Float.parseFloat(val));
+                }
+                else if("欧元".equals(str1)){
+                    bundle.putFloat("euro-rate",100f/Float.parseFloat(val));
+                }
+                else if("韩元".equals(str1)){
+                    bundle.putFloat("won-rate",100f/Float.parseFloat(val));
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        Message msg=handler.obtainMessage(5);
+        //msg.obj ="Hello from run()";
+        msg.obj=bundle;
+        handler.sendMessage(msg);
 
     }
+    public void getTime(){
+        Calendar calendar=Calendar.getInstance();
+        int year=calendar.get(Calendar.YEAR);
+        int month=calendar.get(Calendar.MONTH)+1;
+        int day=calendar.get(Calendar.DAY_OF_MONTH);
+        int systemTime=year*10000+month*100+day;
+        SharedPreferences lastTime=getSharedPreferences("mytime",Activity.MODE_PRIVATE);
+        SharedPreferences.Editor edTime=lastTime.edit();
+        edTime.putInt("systemTime",systemTime);
+        edTime.commit();
+    }
+
+
     private String inputStream2String(InputStream inputStream) throws IOException {
         final int bufferSize=1024;
         final char[] buffer=new char[bufferSize];
