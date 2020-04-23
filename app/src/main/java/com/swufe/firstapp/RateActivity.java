@@ -41,6 +41,7 @@ public class RateActivity extends AppCompatActivity implements Runnable{
     private float dollarRate=0.0f;
     private float euroRate=0.0f;
     private float wonRate=0.0f;
+    private String updateDate="";
     EditText rmb;
     TextView show;
     Handler handler;
@@ -55,28 +56,42 @@ public class RateActivity extends AppCompatActivity implements Runnable{
         dollarRate=sharedPreferences.getFloat("dollar_rate",0.0f);
         euroRate=sharedPreferences.getFloat("euro_rate",0.0f);
         wonRate=sharedPreferences.getFloat("won_rate",0.0f);
-        Thread t=new Thread(this);
-        t.start();
+        updateDate=sharedPreferences.getString("update_date","");
+        Date today=Calendar.getInstance().getTime();
+        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+        final String todayStr=sdf.format(today);
+        if(!today.equals(updateDate)) {
+            Thread t = new Thread(this);
+            t.start();
+        }
 
         handler=new Handler(){
             @Override
             public void handleMessage(@NonNull Message msg) {
 
-                SharedPreferences time=getSharedPreferences("mytime",Activity.MODE_PRIVATE);
-                int lastTime=time.getInt("systemTime",0);
-                Calendar newCalendar=Calendar.getInstance();
-                int newYear=newCalendar.get(Calendar.YEAR);
-                int newMonth=newCalendar.get(Calendar.MONTH)+1;
-                int newDay=newCalendar.get(Calendar.DAY_OF_MONTH);
-                int newTime=newYear*10000+newMonth*100+newDay;
-                show.setText(newTime+"");
-                if(msg.what==5 && newTime>lastTime){
+//                SharedPreferences time=getSharedPreferences("mytime",Activity.MODE_PRIVATE);
+//                int lastTime=time.getInt("systemTime",0);
+//                Calendar newCalendar=Calendar.getInstance();
+//                int newYear=newCalendar.get(Calendar.YEAR);
+//                int newMonth=newCalendar.get(Calendar.MONTH)+1;
+//                int newDay=newCalendar.get(Calendar.DAY_OF_MONTH);
+//                int newTime=newYear*10000+newMonth*100+newDay;
+//                show.setText(newTime+"");
+                if(msg.what==5){
                     Bundle bd1=(Bundle)msg.obj;
                     dollarRate=bd1.getFloat("dollar-rate");
                     euroRate=bd1.getFloat("euro-rate");
                     wonRate=bd1.getFloat("won-rate");
+                    SharedPreferences sharedPreferences=getSharedPreferences("myrate", Activity.MODE_PRIVATE);
+                    SharedPreferences.Editor editor=sharedPreferences.edit();
+                    editor.putString("update_date",todayStr);
+                    editor.putFloat("dollar_rate",dollarRate);
+                    editor.putFloat("euro_rate",euroRate);
+                    editor.putFloat("won_rate",wonRate);
+                    editor.apply();
                     Toast.makeText(RateActivity.this,"汇率已更新",Toast.LENGTH_LONG).show();
-                    getTime();
+
+                    //getTime();
                 }
                 super.handleMessage(msg);
             }
@@ -127,6 +142,11 @@ public class RateActivity extends AppCompatActivity implements Runnable{
         if(item.getItemId()==R.id.action_settings){
             openConfig();
         }
+        else if(item.getItemId()==R.id.open_list){
+            Intent list = new Intent(this, MyListActivity.class);
+
+            startActivity(list);
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -149,7 +169,7 @@ public class RateActivity extends AppCompatActivity implements Runnable{
 
     @Override
     public void run() {
-        Bundle bundle=new Bundle();
+        Bundle bundle;
 
 //        URL url= null;
 //        try {
@@ -163,7 +183,47 @@ public class RateActivity extends AppCompatActivity implements Runnable{
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }
-        Document doc= null;
+
+        bundle=getFromBOC();
+        Message msg=handler.obtainMessage(5);
+        //msg.obj ="Hello from run()";
+        msg.obj=bundle;
+        handler.sendMessage(msg);
+
+    }
+
+    private Bundle getFromBOC() {
+        Bundle bundle=new Bundle();
+        Document doc=null;
+        try {
+            doc = Jsoup.connect("https://www.boc.cn/sourcedb/whpj/").get();
+            Elements tables=doc.getElementsByTag("table");
+            Element table2=tables.get(1);
+            //Log.i(TAG,"run:table0"+table0);
+            Elements tds=table2.getElementsByTag("td");
+            for(int i=0;i<tds.size();i+=8){
+                Element td1=tds.get(i);
+                Element td2=tds.get(i+5);
+                String str1=td1.text();
+                String val=td2.text();
+                if("美元".equals(str1)){
+                    bundle.putFloat("dollar-rate",100f/Float.parseFloat(val));
+                }
+                else if("欧元".equals(str1)){
+                    bundle.putFloat("euro-rate",100f/Float.parseFloat(val));
+                }
+                else if("韩国元".equals(str1)){
+                    bundle.putFloat("won-rate",100f/Float.parseFloat(val));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bundle;
+    }
+    private Bundle getFromUsdCny() {
+        Bundle bundle=new Bundle();
+        Document doc=null;
         try {
             doc = Jsoup.connect("https://www.usd-cny.com/bankofchina.htm").get();
             Elements tables=doc.getElementsByTag("table");
@@ -188,23 +248,20 @@ public class RateActivity extends AppCompatActivity implements Runnable{
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Message msg=handler.obtainMessage(5);
-        //msg.obj ="Hello from run()";
-        msg.obj=bundle;
-        handler.sendMessage(msg);
+        return bundle;
+    }
 
-    }
-    public void getTime(){
-        Calendar calendar=Calendar.getInstance();
-        int year=calendar.get(Calendar.YEAR);
-        int month=calendar.get(Calendar.MONTH)+1;
-        int day=calendar.get(Calendar.DAY_OF_MONTH);
-        int systemTime=year*10000+month*100+day;
-        SharedPreferences lastTime=getSharedPreferences("mytime",Activity.MODE_PRIVATE);
-        SharedPreferences.Editor edTime=lastTime.edit();
-        edTime.putInt("systemTime",systemTime);
-        edTime.commit();
-    }
+//    public void getTime(){
+//        Calendar calendar=Calendar.getInstance();
+//        int year=calendar.get(Calendar.YEAR);
+//        int month=calendar.get(Calendar.MONTH)+1;
+//        int day=calendar.get(Calendar.DAY_OF_MONTH);
+//        int systemTime=year*10000+month*100+day;
+//        SharedPreferences lastTime=getSharedPreferences("mytime",Activity.MODE_PRIVATE);
+//        SharedPreferences.Editor edTime=lastTime.edit();
+//        edTime.putInt("systemTime",systemTime);
+//        edTime.commit();
+//    }
 
 
     private String inputStream2String(InputStream inputStream) throws IOException {

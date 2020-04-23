@@ -12,5 +12,6 @@
     <string name="rmb_hint">Input RMB</string>
     <string name="dollar_hint" translatable="false"></string>
     <string name="euro_hint" translatable="false"></string>
-    <string name="won_hint"></string>
+    <string name="won_hint" translatable="false"></string>
+    <string name="label_open_list">OpenList</string>
 </resources>
