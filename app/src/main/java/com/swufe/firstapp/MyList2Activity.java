@@ -3,7 +3,9 @@ package com.swufe.firstapp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,10 +27,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class MyList2Activity extends ListActivity implements Runnable, AdapterView.OnItemClickListener {
+public class MyList2Activity extends ListActivity implements Runnable, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
 
     Handler handler;
-    private ArrayList<HashMap<String,String>> listItems;
+    private List<HashMap<String,String>> listItems;
     private SimpleAdapter listItemAdapter;
     private String TAG = "mylist2";
 
@@ -44,8 +46,8 @@ public class MyList2Activity extends ListActivity implements Runnable, AdapterVi
             @Override
             public void handleMessage(@NonNull Message msg) {
                 if (msg.what == 7) {
-                    List<HashMap<String,String>> list2 = (List<HashMap<String, String>>) msg.obj;
-                    listItemAdapter = new SimpleAdapter(MyList2Activity.this, list2,
+                    listItems = (List<HashMap<String, String>>) msg.obj;
+                    listItemAdapter = new SimpleAdapter(MyList2Activity.this, listItems,
                             R.layout.list_item,
                             new String[] { "ItemTitle", "ItemDetail" },
                             new int[] {R.id.itemTitle, R.id.itemDetail }
@@ -56,6 +58,7 @@ public class MyList2Activity extends ListActivity implements Runnable, AdapterVi
             }
         };
         getListView().setOnItemClickListener(this);
+        getListView().setOnItemLongClickListener(this);
     }
     private void initListView(){
         listItems = new ArrayList<HashMap<String, String>>();
@@ -115,5 +118,21 @@ public class MyList2Activity extends ListActivity implements Runnable, AdapterVi
         rateClac.putExtra("title", titleStr);
         rateClac.putExtra("rate", Float.parseFloat(detailStr));
         startActivity(rateClac);
+    }
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
+//        listItems.remove(position);
+//        listItemAdapter.notifyDataSetChanged();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("提示").setMessage("请确认是否删除当前数据").setPositiveButton("是", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                listItems.remove(position);
+                listItemAdapter.notifyDataSetChanged();
+            }
+        }).setNegativeButton("否",null);
+        builder.create().show();
+        return true;
     }
 }

@@ -17,6 +17,7 @@
     <EditText
         android:id="@+id/inp2"
         android:hint="@string/rmb_hint"
+        android:autofillHints=""
         android:inputType="numberDecimal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
